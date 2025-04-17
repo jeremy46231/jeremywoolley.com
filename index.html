@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Jeremy Woolley</title>
+
+    <script src="/temporal.js"></script>
+    <link rel="stylesheet" href="/style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  </head>
+
+  <body>
+    <main>
+      <h1>Hi, I'm Jeremy!</h1>
+      <p>I'm a <span id="age">16</span> year old developer in California :D</p>
+
+      <script>
+        document.getElementById('age').innerText = Temporal.Now.instant()
+          .since('2008-11-14T00:00-08')
+          .round({
+            largestUnit: 'years',
+            relativeTo: Temporal.Now.zonedDateTimeISO('America/Los_Angeles'),
+            roundingMode: 'trunc',
+          }).years
+      </script>
+
+      <ul>
+        <li>
+          GitHub: <a href="https://github.com/jeremy46231">jeremy46231</a>
+        </li>
+        <li>
+          Email:
+          <a href="mailto:site@jeremywoolley.com">jeremy@jeremyrwoolley.com</a>
+        </li>
+        <li>
+          Signal:
+          <a
+            href="https://signal.me/#eu/2uImd7hSg_Bv5qePlDBQDaUkKPA7aiWntJsweokm8M1JUhBiTpdCKr3gYYeX-5Z9"
+          >
+            @jer.15
+          </a>
+        </li>
+        <li>
+          Matrix:
+          <a href="https://matrix.to/#/@jeremy46231:beeper.com">
+            @jeremy46231:beeper.com
+          </a>
+        </li>
+        <li>
+          Hack Club:
+          <a href="https://hackclub.slack.com/team/U06UYA5GMB5">@Jeremy</a>
+          <sub><a href="https://hackclub.com">what is Hack Club?</a></sub>
+        </li>
+      </ul>
+    </main>
+    <footer>
+      <p>
+        &copy; <span id="year">2025</span> Jeremy Woolley
+        <script>
+          document.getElementById('year').innerText =
+            Temporal.Now.plainDateISO().year
+        </script>
+        &mdash;
+        <a href="https://github.com/jeremy46231/jeremywoolley.com">
+          MIT license
+        </a>
+      </p>
+    </footer>
+  </body>
+</html>

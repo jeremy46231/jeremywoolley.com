@@ -4,6 +4,7 @@ body {
     sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
+  margin: 2rem;
 }
 a {
   color: blue;
@@ -12,13 +13,19 @@ code {
   font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console,
     monospace;
 }
-footer {
-  margin-top: 3em;
-  opacity: 0.7;
+p {
+  margin-block: 1rem;
+}
+
+h1 {
+  margin-block-end: 1.5rem;
+  line-height: 1;
 }
 #status {
   list-style: none;
   padding-inline-start: 0;
+  margin-block: 1.5rem;
+  font-size: 0.9em;
 }
 #status .loading {
   opacity: 0.5;
@@ -26,6 +33,10 @@ footer {
 }
 #status .error {
   color: red;
+}
+footer {
+  margin-top: 3em;
+  opacity: 0.7;
 }
 
 #accounts {
@@ -38,6 +49,8 @@ footer {
 *::before,
 *::after {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 img,
 picture,

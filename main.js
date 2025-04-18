@@ -1,7 +1,41 @@
-async function updateSlack() {
-  const slackElement = document.getElementById('slack')
-  const slackStatusElement = document.getElementById('slack-status')
+const clockElement = document.getElementById('clock')
+const clockTimeElement = document.getElementById('clock-time')
+const slackElement = document.getElementById('slack')
+const slackStatusElement = document.getElementById('slack-status')
+const lastFMElement = document.getElementById('lastfm')
+const lastFMStatusElement = document.getElementById('lastfm-status')
+const githubElement = document.getElementById('github')
+const githubStatusElement = document.getElementById('github-status')
 
+async function updateClock() {
+  try {
+    const now = Temporal.Now.zonedDateTimeISO('America/Los_Angeles')
+    const localDate = Temporal.Now.plainDateISO()
+    const emoji = plainTimeToEmoji(now.toPlainTime())
+    const timeString = now.toLocaleString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: true,
+    })
+    const dateDifference = localDate.until(now.toPlainDate()).days
+    const dateDifferenceString =
+      dateDifference > 0
+        ? ' (tomorrow)'
+        : dateDifference < 0
+        ? ' (yesterday)'
+        : ''
+
+    clockTimeElement.textContent = `${emoji} ${timeString}${dateDifferenceString}`
+  } catch (e) {
+    clockTimeElement.textContent = 'Error displaying time'
+    console.error('Error updating clock:', e)
+  }
+
+  clockElement.classList.remove('loading')
+}
+
+async function updateSlack() {
   try {
     const slackData = await (await fetch('/api/slack')).json()
 
@@ -9,7 +43,10 @@ async function updateSlack() {
     let statusEmojiHTML = ''
 
     const customEmojiInfo = slackData.status_emoji_display_info?.[0]
-    if (slackData.status_emoji) {
+    if (
+      slackData.status_emoji &&
+      slackData.status_emoji !== ':tw_musical_note:'
+    ) {
       if (customEmojiInfo?.unicode) {
         statusEmojiHTML = String.fromCodePoint(
           parseInt(customEmojiInfo.unicode, 16)
@@ -27,7 +64,10 @@ async function updateSlack() {
       statusEmojiHTML = '⚪️'
     }
 
-    if (slackData.status_text) {
+    if (
+      slackData.status_text &&
+      slackData.status_emoji !== ':tw_musical_note:'
+    ) {
       statusText = slackData.status_text
     } else if (slackData.huddle_state === 'in_a_huddle') {
       statusText = 'In a huddle'
@@ -43,15 +83,12 @@ async function updateSlack() {
   } catch (e) {
     slackElement.classList.remove('loading')
     slackElement.classList.add('error')
-    slackStatusElement.textContent = 'Error loading Slack status'
+    slackStatusElement.textContent = '⚪️ Error loading Slack status'
     console.error('Error updating Slack status:', e)
   }
 }
 
 async function updateLastFM() {
-  const lastFMElement = document.getElementById('lastfm')
-  const lastFMStatusElement = document.getElementById('lastfm-status')
-
   try {
     const recentTracks = (await (await fetch('/api/lastfm')).json())
       .recenttracks.track
@@ -61,7 +98,6 @@ async function updateLastFM() {
     if (nowPlaying) {
       const link = document.createElement('a')
       link.href = 'https://www.last.fm/user/jeremy46231' // nowPlaying.url
-      link.target = '_blank'
       link.textContent = `${nowPlaying.name} by ${
         nowPlaying.artist['#text'].split('; ')[0]
       }`
@@ -79,7 +115,6 @@ async function updateLastFM() {
       )
       const link = document.createElement('a')
       link.href = 'https://www.last.fm/user/jeremy46231' // lastTrack.url
-      link.target = '_blank'
       link.textContent = `${lastTrack.name} by ${
         lastTrack.artist['#text'].split('; ')[0]
       }`
@@ -99,9 +134,6 @@ async function updateLastFM() {
 }
 
 async function updateGitHub() {
-  const githubElement = document.getElementById('github')
-  const githubStatusElement = document.getElementById('github-status')
-
   try {
     const events = await (
       await fetch('https://api.github.com/users/jeremy46231/events')
@@ -136,7 +168,6 @@ async function updateGitHub() {
       githubStatusElement.textContent = ''
       const linkElement = document.createElement('a')
       linkElement.href = link
-      linkElement.target = '_blank'
 
       const commitIDElement = document.createElement('code')
       commitIDElement.textContent = hash
@@ -161,16 +192,30 @@ async function updateGitHub() {
   }
 }
 
-// Main loop
-
-while (true) {
-  while (document.visibilityState !== 'visible') {
-    await sleep(500)
+;(async () => {
+  while (true) {
+    if (document.visibilityState === 'visible') {
+      await updateClock()
+    }
+    const msLeftInSecond =
+      1000 - (Temporal.Now.instant().epochMilliseconds % 1000)
+    await sleep(msLeftInSecond) // Update every second (aligned with clock)
   }
-  await Promise.all([updateSlack(), updateLastFM(), updateGitHub()])
-  console.log('Updated statuses')
-  await sleep(30_000)
-}
+})()
+;(async () => {
+  while (true) {
+    while (document.visibilityState !== 'visible') await sleep(500)
+    await Promise.all([updateSlack(), updateLastFM()])
+    await sleep(30_000)
+  }
+})()
+;(async () => {
+  while (true) {
+    while (document.visibilityState !== 'visible') await sleep(500)
+    await updateGitHub()
+    await sleep(90_000)
+  }
+})()
 
 // Helper functions
 
@@ -182,10 +227,24 @@ function formatDuration(duration, relativeTo) {
   const roundSettings =
     Temporal.Duration.compare(duration, { days: 3 }, { relativeTo }) === 1
       ? { smallestUnit: 'days' }
-      : Temporal.Duration.compare(duration, { minutes: 5 }, { relativeTo }) === 1
+      : Temporal.Duration.compare(duration, { minutes: 5 }, { relativeTo }) ===
+        1
       ? { largestUnit: 'hours', smallestUnit: 'minutes' }
       : { largestUnit: 'minutes', smallestUnit: 'seconds' }
   const rounded = duration.round(roundSettings, { relativeTo })
   const string = rounded.toLocaleString('en', { style: 'long' })
   return string
+}
+
+function plainTimeToEmoji(time) {
+  const rounded = time.round({ smallestUnit: 'minutes', roundingIncrement: 30 })
+  const hour = rounded.hour % 12
+  const is30Minutes = rounded.minute === 30
+
+  const hourEmojis = '🕛,🕐,🕑,🕒,🕓,🕔,🕕,🕖,🕗,🕘,🕙,🕚'.split(',')
+  const halfHourEmojis = '🕧,🕜,🕝,🕞,🕟,🕠,🕡,🕢,🕣,🕤,🕥,🕦'.split(',')
+
+  const hourEmoji = is30Minutes ? halfHourEmojis[hour] : hourEmojis[hour]
+
+  return hourEmoji
 }

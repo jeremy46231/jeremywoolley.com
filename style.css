@@ -1,14 +1,35 @@
 body {
-  font-family: Avenir, Montserrat, Corbel, 'URW Gothic', source-sans-pro, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui,
+    helvetica neue, Cantarell, Ubuntu, roboto, noto, helvetica, arial,
+    sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
 }
 a {
   color: blue;
 }
+code {
+  font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console,
+    monospace;
+}
 footer {
   margin-top: 3em;
   opacity: 0.7;
+}
+#status {
+  list-style: none;
+  padding-inline-start: 0;
+}
+#status .loading {
+  opacity: 0.5;
+  filter: grayscale();
+}
+#status .error {
+  color: red;
+}
+
+#accounts {
+  padding-inline-start: 1.5em;
 }
 
 /* Base styles */

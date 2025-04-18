@@ -9,8 +9,8 @@ export async function onRequest(context) {
     ).json()
   
   const [profile, presence] = await Promise.all([
-    getJSON(`https://slack.com/api/users.profile.get?user=${context.env.SLACK_USER_ID}`),
-    getJSON(`https://slack.com/api/users.getPresence?user=${context.env.SLACK_USER_ID}`),
+    getJSON('https://slack.com/api/users.profile.get?user=U06UYA5GMB5'),
+    getJSON('https://slack.com/api/users.getPresence?user=U06UYA5GMB5'),
   ])
   if (!profile.ok || !presence.ok) {
     return new Response("Error fetching data", { status: 500 })

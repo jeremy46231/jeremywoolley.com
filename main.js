@@ -7,7 +7,7 @@ const lastFMStatusElement = document.getElementById('lastfm-status')
 const githubElement = document.getElementById('github')
 const githubStatusElement = document.getElementById('github-status')
 
-async function updateClock() {
+function updateClock() {
   try {
     const now = Temporal.Now.zonedDateTimeISO('America/Los_Angeles')
     const localDate = Temporal.Now.plainDateISO()
@@ -26,7 +26,7 @@ async function updateClock() {
         ? ' (yesterday)'
         : ''
 
-    clockTimeElement.textContent = `${emoji} ${timeString}${dateDifferenceString}`
+    clockTimeElement.textContent = `${emoji} ${timeString} Pacific${dateDifferenceString}`
   } catch (e) {
     clockTimeElement.textContent = 'Error displaying time'
     console.error('Error updating clock:', e)
@@ -194,9 +194,7 @@ async function updateGitHub() {
 
 ;(async () => {
   while (true) {
-    if (document.visibilityState === 'visible') {
-      await updateClock()
-    }
+    updateClock()
     const msLeftInSecond =
       1000 - (Temporal.Now.instant().epochMilliseconds % 1000)
     await sleep(msLeftInSecond) // Update every second (aligned with clock)

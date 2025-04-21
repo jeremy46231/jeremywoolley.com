@@ -1,10 +1,12 @@
 body {
-  font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui,
-    helvetica neue, Cantarell, Ubuntu, roboto, noto, helvetica, arial,
+  font-family: -apple-system, BlinkMacSystemFont, Avenir Next, Avenir, Segoe UI,
+    Helvetica Neue, Cantarell, Ubuntu, Roboto, Noto, Helvetica, Arial,
     sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   margin: 2rem;
+
+  max-width: 50rem;
 }
 a {
   color: blue;
@@ -23,7 +25,7 @@ h1 {
 }
 #status {
   list-style: none;
-  padding-inline-start: 0;
+  padding-inline-start: 1rem;
   margin-block: 1.5rem;
   font-size: 0.9em;
 }

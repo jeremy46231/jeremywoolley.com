@@ -1,3 +1,7 @@
+<!--
+  hi! this website is pure, static, unminified HTML, CSS, and JS (plus some
+  simple /api routes), take a look around :D
+-->
 <!DOCTYPE html>
 <html>
   <head>
@@ -20,6 +24,8 @@
     <main>
       <h1>Hi, I'm Jeremy!</h1>
 
+      <p><span id="age">16</span> year old developer and computer nerd :D</p>
+
       <ul id="status">
         <li id="clock" class="js-only loading">
           <span id="clock-time">🕒 Loading...</span>
@@ -37,22 +43,24 @@
       </ul>
 
       <p>
-        I'm <span id="age">a 16</span> year old developer and computer nerd :D
+        I love making cool stuff, whether it's using technology to solve
+        tangible problems or exploiting clever hacks just to see if I
+        <em>can</em>.
       </p>
-      <script>
-        // Update my age if needed
-        const birthday = Temporal.ZonedDateTime.from(
-          '2008-11-14T00:00-08[America/Los_Angeles]'
-        )
-        const age = Temporal.Now.instant().since(birthday).round({
-          largestUnit: 'years',
-          relativeTo: birthday,
-          roundingMode: 'trunc',
-        }).years
-        const article =
-          age.toFixed()[0] === '8' || age === 11 || age === 18 ? 'an' : 'a'
-        document.getElementById('age').innerText = `${article} ${age}`
-      </script>
+      <p>
+        I design for simplicity and precision, but also maintainability (I'll
+        thank me later!). Privacy matters, which is why I prefer to selfhost my
+        tools and understand the technology we use every day. The open-source
+        ethos and hacker mindset really resonate with me, and a good community
+        keeps me grounded.
+      </p>
+      <p>
+        My interests are all over the place, from web tech and math to
+        linguistics and typography. Sharing those interests with others makes me
+        happy, especially when I can help a tricky concept finally click for
+        someone else. Honestly, there's nothing like a good, respectful debate
+        that actually changes my mind.
+      </p>
 
       <ul id="accounts">
         <li>
@@ -66,9 +74,9 @@
         <li>
           Signal:
           <a
-            href="https://signal.me/#eu/2uImd7hSg_Bv5qePlDBQDaUkKPA7aiWntJsweokm8M1JUhBiTpdCKr3gYYeX-5Z9"
+            href="https://signal.me/#eu/S51OlZiwHuiJ6sTjI8FQICoTkqcYRaJ3UU48IHGw8vsjMZ8_2aBPYYLJy-KT_nq3"
           >
-            @jer.15
+            @jer.41
           </a>
         </li>
         <li>
@@ -86,13 +94,7 @@
     </main>
     <footer>
       <p>
-        &copy; <span id="year">2025</span> Jeremy Woolley
-        <script>
-          // Make sure the year is correct
-          document.getElementById('year').innerText =
-            Temporal.Now.plainDateISO().year
-        </script>
-        &mdash;
+        &copy; <span id="year">2025</span> Jeremy Woolley &mdash;
         <a href="https://github.com/jeremy46231/jeremywoolley.com">
           MIT license
         </a>

@@ -1,3 +1,5 @@
+const ageElement = document.getElementById('age')
+const yearElement = document.getElementById('year')
 const clockElement = document.getElementById('clock')
 const clockTimeElement = document.getElementById('clock-time')
 const slackElement = document.getElementById('slack')
@@ -6,6 +8,23 @@ const lastFMElement = document.getElementById('lastfm')
 const lastFMStatusElement = document.getElementById('lastfm-status')
 const githubElement = document.getElementById('github')
 const githubStatusElement = document.getElementById('github-status')
+
+// Update my age if needed
+const birthday = Temporal.ZonedDateTime.from(
+  '2008-11-14T00:00-08[America/Los_Angeles]'
+)
+const age = Temporal.Now.instant().since(birthday).round({
+  largestUnit: 'years',
+  relativeTo: birthday,
+  roundingMode: 'trunc',
+}).years
+// const article =
+//   age.toFixed()[0] === '8' || age === 11 || age === 18 ? 'an' : 'a'
+ageElement.textContent = age
+
+// Update the copyright year if needed
+// I don't think this is how the legal system works, but it makes my website look more up-to-date ;)
+yearElement.innerText = Temporal.Now.plainDateISO().year
 
 function updateClock() {
   try {
@@ -40,7 +59,8 @@ async function updateSlack() {
     const slackData = await (await fetch('/api/slack')).json()
 
     let statusText = ''
-    let statusEmojiHTML = ''
+    /** @type {null | string | Element} */
+    let statusEmoji = null
 
     const customEmojiInfo = slackData.status_emoji_display_info?.[0]
     if (
@@ -48,20 +68,27 @@ async function updateSlack() {
       slackData.status_emoji !== ':tw_musical_note:'
     ) {
       if (customEmojiInfo?.unicode) {
-        statusEmojiHTML = String.fromCodePoint(
+        statusEmoji = String.fromCodePoint(
           parseInt(customEmojiInfo.unicode, 16)
         )
       } else if (customEmojiInfo?.display_url) {
-        statusEmojiHTML = `<img src="${customEmojiInfo.display_url}" alt="${slackData.status_emoji}" style="display: inline; height: 1em; width: 1em; vertical-align: -0.1em;">`
+        const img = document.createElement('img')
+        img.src = customEmojiInfo.display_url
+        img.alt = slackData.status_emoji
+        img.style.display = 'inline'
+        img.style.height = '1em'
+        img.style.width = '1em'
+        img.style.verticalAlign = '-0.1em'
+        statusEmoji = img
       } else {
-        statusEmojiHTML = slackData.status_emoji
+        statusEmoji = slackData.status_emoji
       }
     } else if (slackData.huddle_state === 'in_a_huddle') {
-      statusEmojiHTML = '🎧'
+      statusEmoji = '🎧'
     } else if (slackData.presence === 'active') {
-      statusEmojiHTML = '🟢'
+      statusEmoji = '🟢'
     } else {
-      statusEmojiHTML = '⚪️'
+      statusEmoji = '⚪️'
     }
 
     if (
@@ -77,7 +104,9 @@ async function updateSlack() {
 
     console.log('Slack status:', statusText)
 
-    slackStatusElement.innerHTML = `${statusEmojiHTML} ${statusText}`
+    slackStatusElement.textContent = ''
+    slackStatusElement.append(statusEmoji)
+    slackStatusElement.append(` ${statusText}`)
     slackElement.classList.remove('loading')
     slackElement.classList.remove('error')
   } catch (e) {

@@ -57,6 +57,7 @@ function updateClock() {
 async function updateSlack() {
   try {
     const slackData = await (await fetch('/api/slack')).json()
+    if (window.stopStatusUpdate) return
 
     let statusText = ''
     /** @type {null | string | Element} */
@@ -121,6 +122,7 @@ async function updateLastFM() {
   try {
     const recentTracks = (await (await fetch('/api/lastfm')).json())
       .recenttracks.track
+    if (window.stopStatusUpdate) return
     const nowPlaying = recentTracks.find(
       (song) => song?.['@attr']?.nowplaying === 'true'
     )
@@ -167,6 +169,7 @@ async function updateGitHub() {
     const events = await (
       await fetch('https://api.github.com/users/jeremy46231/events')
     ).json()
+    if (window.stopStatusUpdate) return
 
     const latestPush = Array.isArray(events)
       ? events.find(

@@ -45,9 +45,25 @@ footer {
   padding-inline-start: 1.5em;
 }
 
-body.gravity-effect-active {
+body.physics-effect-active {
   pointer-events: none;
   user-select: none;
+}
+body.physics-effect-active * {
+  text-decoration: none !important;
+  filter: none !important;
+}
+.physics-placeholder {
+  display: inline-block;
+  visibility: hidden;
+  /* opacity: 0.05; */
+}
+.physics-object {
+  position: fixed;
+  margin: 0;
+  transform-origin: center center;
+  pointer-events: initial;
+  /* user-select: initial; */
 }
 
 /* Base styles */

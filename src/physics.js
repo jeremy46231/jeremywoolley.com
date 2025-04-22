@@ -12,24 +12,22 @@ const {
   Events,
 } = Matter
 
-function activateGravityEffect(options = {}) {
+function activatePhysicsEffect(options = {}) {
   const config = {
     /** Which container holds the text to affect? */
     contentSelector: 'body',
-    /** CSS class for the created word spans */
-    wordClassName: 'physics-word',
     /** Stiffness for mouse dragging constraint */
     stiffness: 0.1,
-    /** Bounciness of words (0-1) */
-    wordRestitution: 0.6,
-    /** Friction of words (0-1) */
-    wordFriction: 0.05,
+    /** Bounciness of objects (0-1) */
+    objectRestitution: 0.6,
+    /** Friction of objects (0-1) */
+    objectFriction: 0.05,
     /** Air resistance (0-1) */
-    wordFrictionAir: 0.01,
+    objectFrictionAir: 0.01,
     /** Mass per area */
-    wordDensity: 0.001,
+    objectDensity: 0.001,
     /** How thick the invisible walls/floor are */
-    boundaryThickness: 200,
+    boundaryThickness: 2000,
     /** Multiplier for gravity strength */
     gravityScale: 1,
     ...options, // Allow overriding defaults
@@ -37,17 +35,17 @@ function activateGravityEffect(options = {}) {
 
   // Prevent conflicts
   window.stopStatusUpdate = true
-  if (document.body.classList.contains('gravity-effect-active')) {
-    console.warn('Gravity effect is already active.')
+  if (document.body.classList.contains('physics-effect-active')) {
+    console.warn('Physics effect is already active.')
     return
   }
-  console.log('Activating Gravity Effect...')
-  document.body.classList.add('gravity-effect-active')
+  console.log('Activating Physics Effect...')
+  document.body.classList.add('physics-effect-active')
 
   // State Variables
   let engine, world, runner, mouseConstraint
   /** @type {{ element: HTMLElement, body: Matter.Body, initialRect: DOMRect }[]} */
-  let wordObjects = []
+  let physicsObjects = []
   /** @type {{ ground: Matter.Body, leftWall: Matter.Body, rightWall: Matter.Body }} */
   let staticBoundaries = {
     ground: null,
@@ -62,21 +60,21 @@ function activateGravityEffect(options = {}) {
    * and prepares them for physics simulation.
    */
   function prepareHtmlForPhysics() {
-    console.log('Preparing HTML...')
+    console.log('Preparing HTML for physics...')
     const contentElement = document.querySelector(config.contentSelector)
     if (!contentElement) {
       console.error(
         `Content element not found with selector: ${config.contentSelector}`
       )
       isEffectActive = false
-      document.body.classList.remove('gravity-effect-active')
+      document.body.classList.remove('physics-effect-active')
       return false
     }
 
-    wordObjects = [] // Reset
+    physicsObjects = [] // Reset
     const walker = document.createTreeWalker(
       contentElement,
-      NodeFilter.SHOW_TEXT,
+      NodeFilter.SHOW_TEXT | NodeFilter.SHOW_ELEMENT,
       null,
       false
     )
@@ -85,7 +83,7 @@ function activateGravityEffect(options = {}) {
 
     // First pass: Identify text nodes and prepare replacements
     while ((node = walker.nextNode())) {
-      if (node.nodeValue.trim().length === 0) continue // Skip empty/whitespace-only nodes
+      // if (node.nodeValue.trim().length === 0) continue // Skip empty/whitespace-only nodes
 
       const parent = node.parentNode
       // Avoid processing text within script/style tags or already processed spans
@@ -94,75 +92,80 @@ function activateGravityEffect(options = {}) {
         parent.tagName === 'SCRIPT' ||
         parent.tagName === 'STYLE' ||
         !parent.checkVisibility() ||
-        parent.classList.contains(config.wordClassName)
+        parent.classList.contains('physics-object') ||
+        parent.classList.contains('physics-placeholder')
       ) {
         continue
       }
 
       const text = node.nodeValue
-      // Split into words and whitespace (keeping spaces)
-      const parts = text.split(/(\s+)/)
+      // Split into words and whitespace (keeping whitespace)
+      const parts = text?.split(/(\s+)/) || []
       const fragment = document.createDocumentFragment()
       let needsReplacement = false
 
-      if (parts.length === 0) continue
-
-      for (const part of parts) {
-        if (part.trim().length === 0) {
-          fragment.append(document.createTextNode(part)) // Preserve whitespace
-          continue
+      if (parts.length > 0) {
+        // Text element
+        for (const part of parts) {
+          if (part === '') continue // Skip empty parts
+          // Whitespace is unchanged
+          if (part.trim().length === 0) {
+            fragment.append(document.createTextNode(part))
+            continue
+          }
+          const span = document.createElement('span')
+          span.textContent = part
+          span.classList.add('physics-placeholder')
+          fragment.appendChild(span)
+          // We'll get the rect later, just store the element for now
+          physicsObjects.push({ element: span })
+          needsReplacement = true
         }
-        const span = document.createElement('span')
-        span.textContent = part
-        span.classList.add(config.wordClassName)
-        // Temporarily inline-block to measure correctly if word wraps
-        span.style.display = 'inline-block'
-        span.style.whiteSpace = 'nowrap' // Prevent internal wrapping during measurement
-        fragment.appendChild(span)
-        // We'll get the rect later, just store the element for now
-        wordObjects.push({ element: span })
+      } else {
+        // Check for other node types, like images
+        if (node instanceof HTMLImageElement) {
+          const clone = node.cloneNode(true)
+          clone.classList.add('physics-placeholder')
+          fragment.appendChild(clone)
+          physicsObjects.push({ element: clone })
+          needsReplacement = true
+        }
       }
-      needsReplacement = true
 
       if (needsReplacement) {
         nodesToReplace.push({ oldNode: node, fragment: fragment })
       }
     }
-
-    // Second pass: Perform replacements and get initial positions
+    console.log(nodesToReplace)
+    // Second pass: Perform replacements
     nodesToReplace.forEach(({ oldNode, fragment }) => {
       oldNode.parentNode.replaceChild(fragment, oldNode)
     })
 
     // Third pass: Get initial geometry and store it
-    for (const item of wordObjects) {
+    for (const item of physicsObjects) {
       const span = item.element
       item.initialRect = span.getBoundingClientRect()
     }
 
     // Fourth pass: Apply absolute positioning styles with stored geometry
-    for (const item of wordObjects) {
-      const span = item.element
-      // set up placeholder span
+    for (const item of physicsObjects) {
+      const element = item.element
+      // set up placeholder element
       /** @type {HTMLElement} */
-      const placeholder = span.cloneNode(true)
+      const placeholder = element.cloneNode(true)
       delete placeholder.id
-      placeholder.classList.remove(config.wordClassName)
-      placeholder.style.visibility = 'hidden'
-      span.parentElement.insertBefore(placeholder, span)
+      element.parentElement.insertBefore(placeholder, element)
 
-      span.style.position = 'fixed'
-      span.style.left = `${item.initialRect.left}px`
-      span.style.top = `${item.initialRect.top}px`
-      span.style.width = `${item.initialRect.width}px` // Set explicit width/height
-      span.style.height = `${item.initialRect.height}px`
-      span.style.margin = '0'
-      span.style.transformOrigin = 'center center'
-      span.style.display = '' // Reset display from inline-block
-      span.style.whiteSpace = '' // Reset white-space
+      element.classList.remove('physics-placeholder')
+      element.classList.add('physics-object')
+      element.style.left = `${item.initialRect.left}px`
+      element.style.top = `${item.initialRect.top}px`
+      element.style.width = `${item.initialRect.width}px`
+      element.style.height = `${item.initialRect.height}px`
     }
 
-    console.log(`Prepared ${wordObjects.length} words for physics.`)
+    console.log(`Prepared ${physicsObjects.length} objects for physics.`)
     return true
   }
 
@@ -231,15 +234,15 @@ function activateGravityEffect(options = {}) {
   }
 
   /**
-   * Creates Matter.js physics bodies corresponding to the prepared word spans.
+   * Creates Matter.js physics bodies corresponding to the prepared object spans.
    */
-  function createWordBodies() {
-    console.log('Creating physics bodies for words...')
-    wordObjects.forEach((item) => {
+  function createObjectBodies() {
+    console.log('Creating physics bodies for objects...')
+    physicsObjects.forEach((item) => {
       const { element, initialRect } = item
       if (!initialRect || initialRect.width === 0 || initialRect.height === 0) {
         console.warn(
-          'Skipping word with invalid initialRect:',
+          'Skipping object with invalid initialRect:',
           element.textContent
         )
         item.body = null // Mark as invalid
@@ -259,10 +262,10 @@ function activateGravityEffect(options = {}) {
         initialRect.width,
         initialRect.height,
         {
-          restitution: config.wordRestitution,
-          friction: config.wordFriction,
-          frictionAir: config.wordFrictionAir,
-          density: config.wordDensity,
+          restitution: config.objectRestitution,
+          friction: config.objectFriction,
+          frictionAir: config.objectFrictionAir,
+          density: config.objectDensity,
           label: element.textContent.substring(0, 20), // Label for debugging
         }
       )
@@ -275,14 +278,14 @@ function activateGravityEffect(options = {}) {
       Composite.add(world, body)
     })
     // Filter out any objects that failed to create a body
-    wordObjects = wordObjects.filter((item) => item.body !== null)
+    physicsObjects = physicsObjects.filter((item) => item.body !== null)
   }
 
   /**
    * Adds mouse interaction (dragging) to the physics world.
    */
   function addMouseControl() {
-    return
+    // return
     console.log('Adding mouse control...')
     const mouse = Mouse.create(document.body) // Listen on body for mouse events
 
@@ -301,9 +304,18 @@ function activateGravityEffect(options = {}) {
 
     Composite.add(world, mouseConstraint)
     // Optional: remove default Render.mouse lookup on mousemove
-    mouseConstraint.mouse.element.removeEventListener("mousemove", mouseConstraint.mouse.mousemove);
-    mouseConstraint.mouse.element.removeEventListener("touchstart", mouseConstraint.mouse.touchstart);
-    mouseConstraint.mouse.element.removeEventListener("touchmove", mouseConstraint.mouse.touchmove);
+    mouseConstraint.mouse.element.removeEventListener(
+      'mousemove',
+      mouseConstraint.mouse.mousemove
+    )
+    mouseConstraint.mouse.element.removeEventListener(
+      'touchstart',
+      mouseConstraint.mouse.touchstart
+    )
+    mouseConstraint.mouse.element.removeEventListener(
+      'touchmove',
+      mouseConstraint.mouse.touchmove
+    )
   }
 
   /**
@@ -328,8 +340,8 @@ function activateGravityEffect(options = {}) {
       }
     }
 
-    // --- Update Word Element Styles ---
-    wordObjects.forEach((item) => {
+    // --- Update Object Element Styles ---
+    physicsObjects.forEach((item) => {
       const { element, body, initialRect } = item
       if (!body) return // Skip if body creation failed
 
@@ -359,10 +371,10 @@ function activateGravityEffect(options = {}) {
    */
   function startSimulation() {
     if (!isEffectActive) return
-    console.log('Starting simulation...')
+    console.log('Starting physics simulation...')
     Runner.run(runner, engine)
     render() // Start the render loop
-    console.log('Gravity Effect Activated!')
+    console.log('Physics Effect Activated!')
 
     // Add resize listener AFTER setup
     window.addEventListener('resize', updateBoundaries)
@@ -373,37 +385,37 @@ function activateGravityEffect(options = {}) {
    * A full cleanup would also remove bodies and restore original DOM.
    */
   function cleanup() {
-    console.log('Cleaning up Gravity Effect (basic)...')
+    console.log('Cleaning up Physics Effect (basic)...')
     isEffectActive = false // Stops render loop
     if (runner) Runner.stop(runner)
     if (engine) Engine.clear(engine)
     if (mouseConstraint) World.remove(world, mouseConstraint) // Remove mouse constraint from world
 
     window.removeEventListener('resize', updateBoundaries)
-    document.body.classList.remove('gravity-effect-active')
+    document.body.classList.remove('physics-effect-active')
 
     // TODO: More thorough cleanup (remove bodies, restore original text nodes)
     // This requires storing the original node structure before prepareHtmlForPhysics
-    wordObjects.forEach((item) => {
+    physicsObjects.forEach((item) => {
       if (item.element) item.element.remove() // Remove the created spans
     })
     // For a true undo, you'd need to re-insert the original text nodes saved earlier.
-    wordObjects = []
+    physicsObjects = []
     engine = world = runner = mouseConstraint = null
   }
 
   // --- Execution Flow ---
   if (prepareHtmlForPhysics()) {
     setupPhysicsEngine()
-    createWordBodies()
-    addMouseControl()
+    createObjectBodies()
+    // addMouseControl() // broken rn
     startSimulation()
 
     // Provide a way to stop it (e.g., for development)
-    window.deactivateGravityEffect = cleanup
+    window.deactivatePhysicsEffect = cleanup
   } else {
-    console.error('Failed to prepare HTML. Gravity effect aborted.')
-    document.body.classList.remove('gravity-effect-active')
+    console.error('Failed to prepare HTML. Physics effect aborted.')
+    document.body.classList.remove('physics-effect-active')
   }
 }
 
@@ -420,5 +432,5 @@ function screenToWindow({ x, y }) {
   }
 }
 
-console.log(activateGravityEffect)
-window.activateGravityEffect = activateGravityEffect
+console.log(activatePhysicsEffect)
+window.activatePhysicsEffect = activatePhysicsEffect

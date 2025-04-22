@@ -221,8 +221,10 @@ async function updateGitHub() {
   }
 }
 
+window.stopStatusUpdate = false
 ;(async () => {
   while (true) {
+    if (window.stopStatusUpdate) break
     updateClock()
     const msLeftInSecond =
       1000 - (Temporal.Now.instant().epochMilliseconds % 1000)
@@ -232,6 +234,7 @@ async function updateGitHub() {
 ;(async () => {
   while (true) {
     while (document.visibilityState !== 'visible') await sleep(500)
+    if (window.stopStatusUpdate) break
     await Promise.all([updateSlack(), updateLastFM()])
     await sleep(30_000)
   }
@@ -239,6 +242,7 @@ async function updateGitHub() {
 ;(async () => {
   while (true) {
     while (document.visibilityState !== 'visible') await sleep(500)
+    if (window.stopStatusUpdate) break
     await updateGitHub()
     await sleep(90_000)
   }

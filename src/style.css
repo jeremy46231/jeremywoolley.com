@@ -45,6 +45,11 @@ footer {
   padding-inline-start: 1.5em;
 }
 
+body.gravity-effect-active {
+  pointer-events: none;
+  user-select: none;
+}
+
 /* Base styles */
 
 *,

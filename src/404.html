@@ -1,1 +1,46 @@
-404 html <b>:p</b>
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>404 - Jeremy Woolley</title>
+
+    <link rel="stylesheet" href="/style.css" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <noscript>
+      <style>
+        .js-only {
+          display: none;
+        }
+      </style>
+    </noscript>
+  </head>
+
+  <body>
+    <main>
+      <h1>404 - Page Not Found</h1>
+
+      <p>
+        Maybe it's on the
+        <!-- this html formatting is ugly because complex html whitespace rules :/ -->
+        <a
+          href="javascript:void(location.href = 'https://web.archive.org/web/*/' + location.href)"
+          class="js-only"
+        >
+          Wayback Machine</a
+        ><noscript>
+          <a href="https://web.archive.org/web/*/https://jeremywoolley.com">
+            Wayback Machine</a
+          ></noscript
+        >? If this is a link that used to work, please
+        <a href="mailto:broken-site-link@jeremywoolley.com">let me know</a>
+        so I can fix it!
+        <a href="https://www.w3.org/Provider/Style/URI">
+          Cool URIs don't change!
+        </a>
+      </p>
+
+      <p>
+        <a href="/">Back to my home page</a>
+      </p>
+    </main>
+  </body>
+</html>

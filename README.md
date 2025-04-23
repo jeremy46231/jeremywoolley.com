@@ -9,4 +9,4 @@ This is my personal site! It's static, with the addition of a few API routes, ru
 - `LASTFM_KEY` - Last.fm API key for getting my music status
 - `SLACK_TOKEN` - Slack bot API token for getting my Slack status (needs `users:read` and `users.profile:read` scopes)
 
-Run `npx wrangler pages dev src` to start the dev server. Push to the repo to deploy, change config in the Cloudflare dashboard.
+Run `bunx wrangler pages dev src` to start the dev server. Push to the repo to deploy, change config in the Cloudflare dashboard.

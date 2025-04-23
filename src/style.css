@@ -45,13 +45,12 @@ footer {
   padding-inline-start: 1.5em;
 }
 
-body.physics-effect-active {
-  pointer-events: none;
-  user-select: none;
-}
-body.physics-effect-active * {
+:is(body.physics-effect-active *) {
   text-decoration: none !important;
   filter: none !important;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 .physics-placeholder {
   display: inline-block;
@@ -64,6 +63,7 @@ body.physics-effect-active * {
   transform-origin: center center;
   pointer-events: initial;
   /* user-select: initial; */
+  /* background-color: antiquewhite; */
 }
 
 /* Base styles */

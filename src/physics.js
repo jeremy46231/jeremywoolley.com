@@ -10,12 +10,13 @@ const {
   Mouse,
   World,
   Events,
+  Common,
 } = Matter
 
 function activatePhysicsEffect(options = {}) {
   const config = {
     /** Which container holds the text to affect? */
-    contentSelector: 'body',
+    contentSelector: 'html',
     /** Stiffness for mouse dragging constraint */
     stiffness: 0.1,
     /** Bounciness of objects (0-1) */
@@ -30,6 +31,8 @@ function activatePhysicsEffect(options = {}) {
     boundaryThickness: 2000,
     /** Multiplier for gravity strength */
     gravityScale: 1,
+    /** Whether to show the Matter.js debug renderer */
+    debugRender: false, // Add this option, default to false
     ...options, // Allow overriding defaults
   }
 
@@ -43,7 +46,7 @@ function activatePhysicsEffect(options = {}) {
   document.body.classList.add('physics-effect-active')
 
   // State Variables
-  let engine, world, runner, mouseConstraint
+  let engine, world, runner, mouseConstraint, renderInstance // Add renderInstance
   /** @type {{ element: HTMLElement, body: Matter.Body, initialRect: DOMRect }[]} */
   let physicsObjects = []
   /** @type {{ ground: Matter.Body, leftWall: Matter.Body, rightWall: Matter.Body }} */
@@ -182,6 +185,41 @@ function activatePhysicsEffect(options = {}) {
     engine.positionIterations = 10
     engine.velocityIterations = 8
 
+    if (config.debugRender) {
+      const screenWidth = window.screen.width
+      const screenHeight = window.screen.height
+
+      const debugCanvas = document.createElement('canvas')
+      debugCanvas.style.position = 'fixed'
+      debugCanvas.style.top = '0'
+      debugCanvas.style.right = '0'
+      debugCanvas.style.zIndex = '1000'
+      debugCanvas.style.pointerEvents = 'none'
+      debugCanvas.style.width = 'min(100%, 700px)'
+      debugCanvas.style.opacity = '0.75'
+      document.body.appendChild(debugCanvas)
+
+      renderInstance = Render.create({
+        canvas: debugCanvas,
+        engine: engine,
+        mouse: Mouse.create(document.querySelector('html')),
+        options: {
+          width: screenWidth,
+          height: screenHeight,
+          wireframes: true,
+          showAngleIndicator: true,
+          showCollisions: true,
+          showVelocity: true,
+          showMousePosition: true,
+        },
+      })
+
+      Render.run(renderInstance)
+      console.log('Debug renderer activated.')
+    } else {
+      renderInstance = null
+    }
+
     runner = Runner.create()
 
     // Create large static boundaries initially, position updated later
@@ -202,13 +240,13 @@ function activatePhysicsEffect(options = {}) {
     // staticBoundaries.ceiling = Bodies.rectangle(0, 0, 10000, thickness, { isStatic: true, label: 'Ceiling' });
 
     Composite.add(world, Object.values(staticBoundaries))
-    updateBoundaries() // Set initial positions
+    updateWindowPosition() // Set initial positions
   }
 
   /**
-   * Updates the position and size of static boundaries based on window size/position.
+   * Updates the boundaries and mouse listeners when the window moves.
    */
-  function updateBoundaries() {
+  function updateWindowPosition() {
     if (!isEffectActive || !engine) return
 
     const w = window.innerWidth
@@ -219,18 +257,14 @@ function activatePhysicsEffect(options = {}) {
     const groundPos = windowToScreen({ x: w / 2, y: h + halfThickness })
     const leftWallPos = windowToScreen({ x: -halfThickness, y: h / 2 })
     const rightWallPos = windowToScreen({ x: w + halfThickness, y: h / 2 })
-    // const ceilingPos = windowToScreen({ x: w / 2, y: -halfThickness });
 
     Body.setPosition(staticBoundaries.ground, groundPos)
     Body.setPosition(staticBoundaries.leftWall, leftWallPos)
     Body.setPosition(staticBoundaries.rightWall, rightWallPos)
-    // Body.setPosition(staticBoundaries.ceiling, ceilingPos);
 
-    // Optional: Adjust vertices if simple positioning isn't enough (usually not needed for thick boundaries)
-    // Example for ground:
-    // const groundVertices = [ { x: -w, y: 0 }, { x: w, y: 0 }, { x: w, y: thickness }, { x: -w, y: thickness } ];
-    // Body.setVertices(staticBoundaries.ground, groundVertices.map(v => ({ x: v.x + groundPos.x, y: v.y + groundPos.y })));
-    console.log('Boundaries updated')
+    if (mouseConstraint) {
+      Mouse.setOffset(mouseConstraint.mouse, windowToScreen({ x: 0, y: 0 }))
+    }
   }
 
   /**
@@ -287,9 +321,9 @@ function activatePhysicsEffect(options = {}) {
   function addMouseControl() {
     // return
     console.log('Adding mouse control...')
-    const mouse = Mouse.create(document.body) // Listen on body for mouse events
+    const mouse = Mouse.create(document.querySelector('html')) // Listen on body for mouse events
 
-    // IMPORTANT: Set the initial offset based on screen position
+    // Set the initial offset based on screen position
     Mouse.setOffset(mouse, windowToScreen({ x: 0, y: 0 }))
 
     mouseConstraint = MouseConstraint.create(engine, {
@@ -297,25 +331,59 @@ function activatePhysicsEffect(options = {}) {
       constraint: {
         stiffness: config.stiffness,
         render: {
-          visible: false, // Don't draw the line from mouse to object
+          visible: true,
         },
       },
     })
 
     Composite.add(world, mouseConstraint)
-    // Optional: remove default Render.mouse lookup on mousemove
-    mouseConstraint.mouse.element.removeEventListener(
-      'mousemove',
-      mouseConstraint.mouse.mousemove
-    )
-    mouseConstraint.mouse.element.removeEventListener(
-      'touchstart',
-      mouseConstraint.mouse.touchstart
-    )
-    mouseConstraint.mouse.element.removeEventListener(
-      'touchmove',
-      mouseConstraint.mouse.touchmove
-    )
+
+    if (renderInstance) {
+      renderInstance.mouse = mouse
+      renderInstance.options.showMousePosition = true
+    }
+  }
+
+  function addGyroControl() {
+    console.log('Adding gyro control...')
+    if (!window.DeviceOrientationEvent) {
+      console.error('DeviceOrientationEvent is not supported.')
+      return
+    }
+    if ('requestPermission' in DeviceOrientationEvent) {
+      DeviceOrientationEvent.requestPermission()
+        .then((response) => {
+          if (response === 'granted') {
+            window.removeEventListener('deviceorientation', handleGyroInput)
+            window.addEventListener('deviceorientation', handleGyroInput)
+          } else {
+            console.error('Permission denied for device orientation.')
+          }
+        })
+        .catch((error) => {
+          console.error('Error requesting permission:', error)
+        })
+    }
+    window.addEventListener('deviceorientation', handleGyroInput)
+
+    function handleGyroInput(event) {
+      const orientation = window?.screen.orientation.angle || 0
+      const gravity = engine.gravity
+
+      if (orientation === 0) {
+        gravity.x = Common.clamp(event.gamma, -90, 90) / 90
+        gravity.y = Common.clamp(event.beta, -90, 90) / 90
+      } else if (orientation === 180) {
+        gravity.x = Common.clamp(event.gamma, -90, 90) / 90
+        gravity.y = Common.clamp(-event.beta, -90, 90) / 90
+      } else if (orientation === 90) {
+        gravity.x = Common.clamp(event.beta, -90, 90) / 90
+        gravity.y = Common.clamp(-event.gamma, -90, 90) / 90
+      } else if (orientation === -90) {
+        gravity.x = Common.clamp(-event.beta, -90, 90) / 90
+        gravity.y = Common.clamp(event.gamma, -90, 90) / 90
+      }
+    }
   }
 
   /**
@@ -331,13 +399,8 @@ function activatePhysicsEffect(options = {}) {
       currentWindowPos.x !== oldWindowPos.x ||
       currentWindowPos.y !== oldWindowPos.y
     ) {
-      console.log('Window moved')
       oldWindowPos = currentWindowPos
-      updateBoundaries()
-      // Update mouse constraint offset when window moves
-      if (mouseConstraint) {
-        Mouse.setOffset(mouseConstraint.mouse, currentWindowPos)
-      }
+      updateWindowPosition()
     }
 
     // --- Update Object Element Styles ---
@@ -377,7 +440,7 @@ function activatePhysicsEffect(options = {}) {
     console.log('Physics Effect Activated!')
 
     // Add resize listener AFTER setup
-    window.addEventListener('resize', updateBoundaries)
+    window.addEventListener('resize', updateWindowPosition)
   }
 
   /**
@@ -388,10 +451,15 @@ function activatePhysicsEffect(options = {}) {
     console.log('Cleaning up Physics Effect (basic)...')
     isEffectActive = false // Stops render loop
     if (runner) Runner.stop(runner)
+    // Conditionally stop and remove the renderer
+    if (renderInstance) {
+      Render.stop(renderInstance)
+      if (renderInstance.canvas) renderInstance.canvas.remove()
+    }
     if (engine) Engine.clear(engine)
     if (mouseConstraint) World.remove(world, mouseConstraint) // Remove mouse constraint from world
 
-    window.removeEventListener('resize', updateBoundaries)
+    window.removeEventListener('resize', updateWindowPosition)
     document.body.classList.remove('physics-effect-active')
 
     // TODO: More thorough cleanup (remove bodies, restore original text nodes)
@@ -401,14 +469,15 @@ function activatePhysicsEffect(options = {}) {
     })
     // For a true undo, you'd need to re-insert the original text nodes saved earlier.
     physicsObjects = []
-    engine = world = runner = mouseConstraint = null
+    engine = world = runner = mouseConstraint = renderInstance = null // Clear renderInstance
   }
 
   // --- Execution Flow ---
   if (prepareHtmlForPhysics()) {
     setupPhysicsEngine()
     createObjectBodies()
-    // addMouseControl() // broken rn
+    addMouseControl() // broken rn
+    addGyroControl()
     startSimulation()
 
     // Provide a way to stop it (e.g., for development)

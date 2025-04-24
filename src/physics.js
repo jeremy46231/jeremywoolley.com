@@ -1,19 +1,19 @@
-import Matter from '/lib/matter.js'
-const {
-  Engine,
-  Render,
-  Runner,
-  Bodies,
-  Body,
-  Composite,
-  MouseConstraint,
-  Mouse,
-  World,
-  Events,
-  Common,
-} = Matter
+async function activatePhysicsEffect(options = {}) {
+  const Matter = (await import('/lib/matter.js')).default
+  const {
+    Engine,
+    Render,
+    Runner,
+    Bodies,
+    Body,
+    Composite,
+    MouseConstraint,
+    Mouse,
+    World,
+    Events,
+    Common,
+  } = Matter
 
-function activatePhysicsEffect(options = {}) {
   const config = {
     /** Which container holds the text to affect? */
     contentSelector: 'html',
@@ -471,6 +471,3 @@ function screenToWindow({ x, y }) {
 }
 
 window.activatePhysicsEffect = activatePhysicsEffect
-
-window.windowToScreen = windowToScreen
-window.screenToWindow = screenToWindow

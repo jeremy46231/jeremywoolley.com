@@ -59,6 +59,7 @@ footer {
 }
 .physics-object {
   position: fixed;
+  z-index: 100;
   margin: 0;
   transform-origin: center center;
   pointer-events: initial;

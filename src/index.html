@@ -18,6 +18,7 @@
 
     <script src="/lib/temporal.js"></script>
     <script src="/main.js" type="module"></script>
+    <script src="/physics.js" type="module"></script>
     <link rel="stylesheet" href="/style.css" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <noscript>
@@ -111,10 +112,10 @@
         <a href="https://github.com/jeremy46231/jeremywoolley.com">
           MIT license
         </a>
+        <span class="js-only">
+          &mdash; <button onclick="activatePhysicsEffect()">physics</button>
+        </span>
       </p>
     </footer>
-
-    <script src="physics.js" type="module"></script>
-    <button onclick="activatePhysicsEffect()">go!</button>
-  </body>  
+  </body>
 </html>

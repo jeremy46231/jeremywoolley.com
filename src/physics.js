@@ -261,10 +261,6 @@ function activatePhysicsEffect(options = {}) {
     Body.setPosition(staticBoundaries.ground, groundPos)
     Body.setPosition(staticBoundaries.leftWall, leftWallPos)
     Body.setPosition(staticBoundaries.rightWall, rightWallPos)
-
-    if (mouseConstraint) {
-      Mouse.setOffset(mouseConstraint.mouse, windowToScreen({ x: 0, y: 0 }))
-    }
   }
 
   /**
@@ -321,10 +317,15 @@ function activatePhysicsEffect(options = {}) {
   function addMouseControl() {
     // return
     console.log('Adding mouse control...')
-    const mouse = Mouse.create(document.querySelector('html')) // Listen on body for mouse events
+    const mouse = Mouse.create(document.documentElement)
 
-    // Set the initial offset based on screen position
-    Mouse.setOffset(mouse, windowToScreen({ x: 0, y: 0 }))
+    // I can't get Matter's logic to work, but this override works
+    Mouse._getRelativeMousePosition = (event, element, pixelRatio) => {
+      return windowToScreen({
+        x: event.clientX,
+        y: event.clientY,
+      })
+    }
 
     mouseConstraint = MouseConstraint.create(engine, {
       mouse: mouse,
@@ -443,35 +444,6 @@ function activatePhysicsEffect(options = {}) {
     window.addEventListener('resize', updateWindowPosition)
   }
 
-  /**
-   * Cleans up the effect (basic version - stops engine, removes listeners).
-   * A full cleanup would also remove bodies and restore original DOM.
-   */
-  function cleanup() {
-    console.log('Cleaning up Physics Effect (basic)...')
-    isEffectActive = false // Stops render loop
-    if (runner) Runner.stop(runner)
-    // Conditionally stop and remove the renderer
-    if (renderInstance) {
-      Render.stop(renderInstance)
-      if (renderInstance.canvas) renderInstance.canvas.remove()
-    }
-    if (engine) Engine.clear(engine)
-    if (mouseConstraint) World.remove(world, mouseConstraint) // Remove mouse constraint from world
-
-    window.removeEventListener('resize', updateWindowPosition)
-    document.body.classList.remove('physics-effect-active')
-
-    // TODO: More thorough cleanup (remove bodies, restore original text nodes)
-    // This requires storing the original node structure before prepareHtmlForPhysics
-    physicsObjects.forEach((item) => {
-      if (item.element) item.element.remove() // Remove the created spans
-    })
-    // For a true undo, you'd need to re-insert the original text nodes saved earlier.
-    physicsObjects = []
-    engine = world = runner = mouseConstraint = renderInstance = null // Clear renderInstance
-  }
-
   // --- Execution Flow ---
   if (prepareHtmlForPhysics()) {
     setupPhysicsEngine()
@@ -479,9 +451,6 @@ function activatePhysicsEffect(options = {}) {
     addMouseControl() // broken rn
     addGyroControl()
     startSimulation()
-
-    // Provide a way to stop it (e.g., for development)
-    window.deactivatePhysicsEffect = cleanup
   } else {
     console.error('Failed to prepare HTML. Physics effect aborted.')
     document.body.classList.remove('physics-effect-active')
@@ -501,5 +470,7 @@ function screenToWindow({ x, y }) {
   }
 }
 
-console.log(activatePhysicsEffect)
 window.activatePhysicsEffect = activatePhysicsEffect
+
+window.windowToScreen = windowToScreen
+window.screenToWindow = screenToWindow

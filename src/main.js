@@ -47,8 +47,9 @@ function updateClock() {
 
     clockTimeElement.textContent = `${emoji} ${timeString} Pacific${dateDifferenceString}`
   } catch (e) {
-    clockTimeElement.textContent = 'Error displaying time'
     console.error('Error updating clock:', e)
+    if (window.stopStatusUpdate) return
+    clockTimeElement.textContent = 'Error displaying time'
   }
 
   clockElement.classList.remove('loading')
@@ -111,10 +112,11 @@ async function updateSlack() {
     slackElement.classList.remove('loading')
     slackElement.classList.remove('error')
   } catch (e) {
+    console.error('Error updating Slack status:', e)
+    if (window.stopStatusUpdate) return
     slackElement.classList.remove('loading')
     slackElement.classList.add('error')
     slackStatusElement.textContent = '⚪️ Error loading Slack status'
-    console.error('Error updating Slack status:', e)
   }
 }
 
@@ -157,10 +159,11 @@ async function updateLastFM() {
 
     lastFMElement.classList.remove('loading')
   } catch (e) {
+    console.error('Error updating last.fm status:', e)
+    if (window.stopStatusUpdate) return
     lastFMElement.classList.remove('loading')
     lastFMElement.classList.add('error')
     lastFMStatusElement.textContent = 'Error loading last.fm data'
-    console.error('Error updating last.fm status:', e)
   }
 }
 
@@ -216,11 +219,12 @@ async function updateGitHub() {
     githubElement.classList.remove('loading')
     githubElement.classList.remove('error')
   } catch (e) {
+    console.error('Error updating GitHub status:', e)
+    if (window.stopStatusUpdate) return
     githubElement.classList.remove('loading')
     githubElement.classList.add('error')
     // Keep the icon, but update text
     githubStatusElement.textContent = 'Error loading GitHub status'
-    console.error('Error updating GitHub status:', e)
   }
 }
 

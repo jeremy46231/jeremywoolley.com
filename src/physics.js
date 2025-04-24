@@ -148,7 +148,7 @@ async function activatePhysicsEffect(options = {}) {
     // Third pass: Get initial geometry and store it
     for (const item of physicsObjects) {
       const span = item.element
-      item.initialRect = span.getBoundingClientRect()
+      item.initialRect = span.getClientRects()[0]
     }
 
     // Fourth pass: Apply absolute positioning styles with stored geometry

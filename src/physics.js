@@ -139,7 +139,7 @@ async function activatePhysicsEffect(options = {}) {
         nodesToReplace.push({ oldNode: node, fragment: fragment })
       }
     }
-    console.log(nodesToReplace)
+
     // Second pass: Perform replacements
     nodesToReplace.forEach(({ oldNode, fragment }) => {
       oldNode.parentNode.replaceChild(fragment, oldNode)
@@ -179,9 +179,7 @@ async function activatePhysicsEffect(options = {}) {
     console.log('Setting up Physics Engine...')
     engine = Engine.create()
     world = engine.world
-    // Adjust gravity if needed
     world.gravity.y = config.gravityScale
-    // Increase iterations for better stacking stability
     engine.positionIterations = 10
     engine.velocityIterations = 8
 

@@ -192,7 +192,8 @@ async function updateGitHub() {
         latestPush.payload.commits[latestPush.payload.commits.length - 1]
       const hash = lastCommit.sha.substring(0, 7)
       const link = `https://github.com/${repo}/commit/${lastCommit.sha}`
-      const message = lastCommit.message.split('\n')[0].slice(0, 50) // Limit to 50 characters
+      let message = lastCommit.message.split('\n')[0].slice(0, 101) // Limit to 100 characters
+      if (message.length > 100) message[100] = '…'
       const date = Temporal.Instant.from(latestPush.created_at)
       const duration = Temporal.Now.instant().since(date)
       const durationString = formatDuration(

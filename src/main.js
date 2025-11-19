@@ -57,6 +57,16 @@ function updateClock() {
 
 async function updateSlack() {
   try {
+    /**
+     * @typedef {Object} SlackStatus
+     * @property {string} [status_emoji]
+     * @property {string} [status_text]
+     * @property {string} [huddle_state]
+     * @property {string} [presence]
+     * @property {Array<{unicode?: string, display_url?: string}>} [status_emoji_display_info]
+     */
+
+    /** @type {SlackStatus} */
     const slackData = await (await fetch('/api/slack')).json()
     if (window.stopStatusUpdate) return
 
@@ -122,6 +132,16 @@ async function updateSlack() {
 
 async function updateLastFM() {
   try {
+    /**
+     * @typedef {Object} LastFMTrack
+     * @property {string} name
+     * @property {{'#text': string}} artist
+     * @property {string} [url]
+     * @property {{uts: string}} [date]
+     * @property {{nowplaying: string}} ['@attr']
+     */
+
+    /** @type {LastFMTrack[]} */
     const recentTracks = (await (await fetch('/api/lastfm')).json())
       .recenttracks.track
     if (window.stopStatusUpdate) return
@@ -169,6 +189,19 @@ async function updateLastFM() {
 
 async function updateGitHub() {
   try {
+    /**
+     * @typedef {Object} GitHubEvent
+     * @property {string} type
+     * @property {{login: string}} actor
+     * @property {{name: string}} repo
+     * @property {string} created_at
+     * @property {Object} payload
+     * @property {string} payload.head
+     * @property {string} payload.ref
+     * @property {Array<{sha: string, message: string}>} [payload.commits]
+     */
+
+    /** @type {GitHubEvent[]} */
     const events = await (
       await fetch('https://api.github.com/users/jeremy46231/events')
     ).json()
@@ -181,19 +214,52 @@ async function updateGitHub() {
         )
       : null
 
-    if (
-      latestPush &&
-      latestPush.payload &&
-      latestPush.payload.commits &&
-      latestPush.payload.commits.length > 0
-    ) {
+    if (latestPush) {
       const repo = latestPush.repo.name
-      const lastCommit =
-        latestPush.payload.commits[latestPush.payload.commits.length - 1]
-      const hash = lastCommit.sha.substring(0, 7)
-      const link = `https://github.com/${repo}/commit/${lastCommit.sha}`
-      let message = lastCommit.message.split('\n')[0].slice(0, 101) // Limit to 100 characters
-      if (message.length > 100) message[100] = '…'
+      const fullSha = latestPush.payload.head
+      const hash = fullSha.substring(0, 7)
+      const link = `https://github.com/${repo}/commit/${fullSha}`
+      let message
+
+      // Check if we have commit message in the payload
+      if (
+        latestPush.payload &&
+        latestPush.payload.commits &&
+        latestPush.payload.commits.length > 0
+      ) {
+        const lastCommit =
+          latestPush.payload.commits[latestPush.payload.commits.length - 1]
+        message = lastCommit.message.split('\n')[0].slice(0, 101)
+        if (message.length > 100) message[100] = '…'
+      } else {
+        // Try to get from cache first
+        const cachedData = localStorage.getItem('github_commit_cache')
+        let cache = cachedData ? JSON.parse(cachedData) : null
+
+        if (cache && cache.sha === fullSha) {
+          message = cache.message
+        } else {
+          // Fetch commit details from GitHub API
+          // Fetch commit details from GitHub API
+          /** @type {{commit: {message: string}}} */
+          const commitData = await (
+            await fetch(
+              `https://api.github.com/repos/${repo}/commits/${fullSha}`
+            )
+          ).json()
+          if (window.stopStatusUpdate) return
+
+          message = commitData.commit.message.split('\n')[0].slice(0, 101)
+          if (message.length > 100) message[100] = '…'
+
+          // Cache the result
+          localStorage.setItem(
+            'github_commit_cache',
+            JSON.stringify({ sha: fullSha, message })
+          )
+        }
+      }
+
       const date = Temporal.Instant.from(latestPush.created_at)
       const duration = Temporal.Now.instant().since(date)
       const durationString = formatDuration(
@@ -262,6 +328,10 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
+/**
+ * @param {Temporal.Duration} duration
+ * @param {Temporal.ZonedDateTime} relativeTo
+ */
 function formatDuration(duration, relativeTo) {
   const roundSettings =
     Temporal.Duration.compare(duration, { days: 3 }, { relativeTo }) === 1
@@ -275,6 +345,9 @@ function formatDuration(duration, relativeTo) {
   return string
 }
 
+/**
+ * @param {Temporal.PlainTime} time
+ */
 function plainTimeToEmoji(time) {
   const rounded = time.round({ smallestUnit: 'minutes', roundingIncrement: 30 })
   const hour = rounded.hour % 12

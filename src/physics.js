@@ -419,9 +419,8 @@ async function activatePhysicsEffect(options = {}) {
       // Apply the transform relative to the initial absolute position
       // This moves the element from its initial spot (initialRect.left/top)
       // to the new physics spot (topLeftX/Y) and applies rotation.
-      element.style.transform = `translate(${topLeftX - initialRect.left}px, ${
-        topLeftY - initialRect.top
-      }px) rotate(${body.angle}rad)`
+      element.style.transform = `translate(${topLeftX - initialRect.left}px, ${topLeftY - initialRect.top
+        }px) rotate(${body.angle}rad)`
     })
 
     // --- Request Next Frame ---
@@ -446,8 +445,8 @@ async function activatePhysicsEffect(options = {}) {
   if (prepareHtmlForPhysics()) {
     setupPhysicsEngine()
     createObjectBodies()
-    addMouseControl() // broken rn
-    addGyroControl()
+    addMouseControl() // broken
+    // addGyroControl() // broken
     startSimulation()
   } else {
     console.error('Failed to prepare HTML. Physics effect aborted.')

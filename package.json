@@ -1,5 +1,8 @@
 {
+  "scripts": {
+    "dev": "wrangler pages dev src"
+  },
   "dependencies": {
-    "wrangler": "^4.13.0"
+    "wrangler": "^4.49.0"
   }
 }

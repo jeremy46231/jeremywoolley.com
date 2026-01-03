@@ -98,7 +98,7 @@ async function updateSlack() {
     //   }
     // } else if (slackData.huddle_state === 'in_a_huddle') {
     //   statusEmoji = '🎧'
-    // } else
+    // }
     if (slackData.presence === 'active') {
       statusEmoji = '🟢'
     } else {
@@ -113,9 +113,8 @@ async function updateSlack() {
     //   statusText = slackData.status_text
     // } else if (slackData.huddle_state === 'in_a_huddle') {
     //   statusText = 'In a huddle'
-    // } else {
-    statusText = slackData.presence === 'active' ? 'Active' : 'Away'
     // }
+    statusText = slackData.presence === 'active' ? 'Active' : 'Away'
 
     console.log('Slack status:', statusText)
 

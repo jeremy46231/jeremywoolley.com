@@ -42,8 +42,8 @@ function updateClock() {
       dateDifference > 0
         ? ' (tomorrow)'
         : dateDifference < 0
-        ? ' (yesterday)'
-        : ''
+          ? ' (yesterday)'
+          : ''
 
     clockTimeElement.textContent = `${emoji} ${timeString} Pacific${dateDifferenceString}`
   } catch (e) {
@@ -74,45 +74,47 @@ async function updateSlack() {
     /** @type {null | string | Element} */
     let statusEmoji = null
 
-    const customEmojiInfo = slackData.status_emoji_display_info?.[0]
-    if (
-      slackData.status_emoji &&
-      slackData.status_emoji !== ':tw_musical_note:'
-    ) {
-      if (customEmojiInfo?.unicode) {
-        statusEmoji = String.fromCodePoint(
-          parseInt(customEmojiInfo.unicode, 16)
-        )
-      } else if (customEmojiInfo?.display_url) {
-        const img = document.createElement('img')
-        img.src = customEmojiInfo.display_url
-        img.alt = slackData.status_emoji
-        img.style.display = 'inline'
-        img.style.height = '1em'
-        img.style.width = '1em'
-        img.style.verticalAlign = '-0.1em'
-        statusEmoji = img
-      } else {
-        statusEmoji = slackData.status_emoji
-      }
-    } else if (slackData.huddle_state === 'in_a_huddle') {
-      statusEmoji = '🎧'
-    } else if (slackData.presence === 'active') {
+    // Commented out to keep status private (only show online/offline)
+    // const customEmojiInfo = slackData.status_emoji_display_info?.[0]
+    // if (
+    //   slackData.status_emoji &&
+    //   slackData.status_emoji !== ':tw_musical_note:'
+    // ) {
+    //   if (customEmojiInfo?.unicode) {
+    //     statusEmoji = String.fromCodePoint(
+    //       parseInt(customEmojiInfo.unicode, 16)
+    //     )
+    //   } else if (customEmojiInfo?.display_url) {
+    //     const img = document.createElement('img')
+    //     img.src = customEmojiInfo.display_url
+    //     img.alt = slackData.status_emoji
+    //     img.style.display = 'inline'
+    //     img.style.height = '1em'
+    //     img.style.width = '1em'
+    //     img.style.verticalAlign = '-0.1em'
+    //     statusEmoji = img
+    //   } else {
+    //     statusEmoji = slackData.status_emoji
+    //   }
+    // } else if (slackData.huddle_state === 'in_a_huddle') {
+    //   statusEmoji = '🎧'
+    // }
+    if (slackData.presence === 'active') {
       statusEmoji = '🟢'
     } else {
       statusEmoji = '⚪️'
     }
 
-    if (
-      slackData.status_text &&
-      slackData.status_emoji !== ':tw_musical_note:'
-    ) {
-      statusText = slackData.status_text
-    } else if (slackData.huddle_state === 'in_a_huddle') {
-      statusText = 'In a huddle'
-    } else {
-      statusText = slackData.presence === 'active' ? 'Active' : 'Away'
-    }
+    // Commented out to keep status private (only show online/offline)
+    // if (
+    //   slackData.status_text &&
+    //   slackData.status_emoji !== ':tw_musical_note:'
+    // ) {
+    //   statusText = slackData.status_text
+    // } else if (slackData.huddle_state === 'in_a_huddle') {
+    //   statusText = 'In a huddle'
+    // }
+    statusText = slackData.presence === 'active' ? 'Active' : 'Away'
 
     console.log('Slack status:', statusText)
 
@@ -337,9 +339,9 @@ function formatDuration(duration, relativeTo) {
     Temporal.Duration.compare(duration, { days: 3 }, { relativeTo }) === 1
       ? { smallestUnit: 'days' }
       : Temporal.Duration.compare(duration, { minutes: 5 }, { relativeTo }) ===
-        1
-      ? { largestUnit: 'hours', smallestUnit: 'minutes' }
-      : { largestUnit: 'minutes', smallestUnit: 'seconds' }
+          1
+        ? { largestUnit: 'hours', smallestUnit: 'minutes' }
+        : { largestUnit: 'minutes', smallestUnit: 'seconds' }
   const rounded = duration.round(roundSettings, { relativeTo })
   const string = rounded.toLocaleString('en', { style: 'long' })
   return string

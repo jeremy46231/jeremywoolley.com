@@ -20,10 +20,11 @@ export async function onRequest(context) {
   }
   const response = {
     presence: presence.presence,
-    status_text: profile.profile.status_text,
-    status_emoji: profile.profile.status_emoji,
-    status_emoji_display_info: profile.profile.status_emoji_display_info,
-    huddle_state: profile.profile.huddle_state,
+    // Commented out to keep status private (only show online/offline)
+    // status_text: profile.profile.status_text,
+    // status_emoji: profile.profile.status_emoji,
+    // status_emoji_display_info: profile.profile.status_emoji_display_info,
+    // huddle_state: profile.profile.huddle_state,
   }
   return new Response(JSON.stringify(response), {
     headers: { 'Content-Type': 'application/json' },

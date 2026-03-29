@@ -15,19 +15,11 @@ Run `bunx wrangler dev` to start the local Worker dev server.
 
 ## Deploy
 
-This project deploys with Wrangler from CI.
+Run:
 
-- GitHub Actions workflow: `.github/workflows/deploy-workers.yml`
-- Manual deploy command: `bunx wrangler deploy`
+`bun run deploy`
 
-### Required GitHub repository secrets
-
-- `CLOUDFLARE_API_TOKEN` - API token with Workers deployment permissions
-- `CLOUDFLARE_ACCOUNT_ID` - Cloudflare account ID
-
-### Required Worker secrets
-
-Set these once for production:
+Production secrets (set once):
 
 - `bunx wrangler secret put LASTFM_KEY`
 - `bunx wrangler secret put SLACK_TOKEN`

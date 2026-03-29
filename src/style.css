@@ -1,6 +1,17 @@
 body {
-  font-family: -apple-system, BlinkMacSystemFont, Avenir Next, Avenir, Segoe UI,
-    Helvetica Neue, Cantarell, Ubuntu, Roboto, Noto, Helvetica, Arial,
+  font-family:
+    -apple-system,
+    BlinkMacSystemFont,
+    Avenir Next,
+    Avenir,
+    Segoe UI,
+    Helvetica Neue,
+    Cantarell,
+    Ubuntu,
+    Roboto,
+    Noto,
+    Helvetica,
+    Arial,
     sans-serif;
   line-height: 1.5;
   -webkit-font-smoothing: antialiased;
@@ -12,7 +23,12 @@ a {
   color: blue;
 }
 code {
-  font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console,
+  font-family:
+    Menlo,
+    Consolas,
+    Monaco,
+    Liberation Mono,
+    Lucida Console,
     monospace;
 }
 p {

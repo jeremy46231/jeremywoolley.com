@@ -3,8 +3,8 @@ main = "worker.js"
 compatibility_date = "2026-03-28"
 
 routes = [
-  { pattern = "jeremywoolley.com/*", zone_name = "jeremywoolley.com" },
-  { pattern = "www.jeremywoolley.com/*", zone_name = "jeremywoolley.com" },
+  { pattern = "jeremywoolley.com", custom_domain = true },
+  { pattern = "www.jeremywoolley.com", custom_domain = true },
 ]
 
 [assets]

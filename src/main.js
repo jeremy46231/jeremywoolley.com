@@ -204,9 +204,7 @@ async function updateGitHub() {
      */
 
     /** @type {GitHubEvent[]} */
-    const events = await (
-      await fetch('https://api.github.com/users/jeremy46231/events')
-    ).json()
+    const events = await (await fetch('/api/github/events')).json()
     if (window.stopStatusUpdate) return
 
     const latestPush = Array.isArray(events)
@@ -242,11 +240,10 @@ async function updateGitHub() {
           message = cache.message
         } else {
           // Fetch commit details from GitHub API
-          // Fetch commit details from GitHub API
           /** @type {{commit: {message: string}}} */
           const commitData = await (
             await fetch(
-              `https://api.github.com/repos/${repo}/commits/${fullSha}`
+              `/api/github/commit?repo=${encodeURIComponent(repo)}&sha=${fullSha}`
             )
           ).json()
           if (window.stopStatusUpdate) return

@@ -8,6 +8,64 @@ async function handleLastFM(env) {
   )
 }
 
+async function proxyGitHub(env, url, cacheTtlSeconds) {
+  const cache = caches.default
+  const cacheKey = new Request(url)
+  const cached = await cache.match(cacheKey)
+  if (cached) return cached
+
+  const response = await fetch(url, {
+    headers: {
+      'User-Agent': 'jeremywoolley.com',
+      Accept: 'application/vnd.github+json',
+      ...(env.GITHUB_TOKEN
+        ? { Authorization: `Bearer ${env.GITHUB_TOKEN}` }
+        : {}),
+    },
+  })
+
+  if (!response.ok) return response
+
+  const cachedResponse = new Response(response.body, response)
+  cachedResponse.headers.set(
+    'Cache-Control',
+    `public, max-age=${cacheTtlSeconds}`
+  )
+  await cache.put(cacheKey, cachedResponse.clone())
+  return cachedResponse
+}
+
+async function handleGitHubEvents(env) {
+  // Cached slightly longer than the client's 90s poll interval so many
+  // concurrent visitors collapse into one upstream request, keeping us
+  // well under GitHub's unauthenticated 60 req/hour per-IP rate limit.
+  return proxyGitHub(
+    env,
+    'https://api.github.com/users/jeremy46231/events',
+    90
+  )
+}
+
+async function handleGitHubCommit(env, request) {
+  const url = new URL(request.url)
+  const repo = url.searchParams.get('repo')
+  const sha = url.searchParams.get('sha')
+  if (
+    !repo ||
+    !sha ||
+    !/^[\w.-]+\/[\w.-]+$/.test(repo) ||
+    !/^[0-9a-f]{7,40}$/i.test(sha)
+  ) {
+    return new Response('Invalid parameters', { status: 400 })
+  }
+  // Commits are immutable, so cache for a long time.
+  return proxyGitHub(
+    env,
+    `https://api.github.com/repos/${repo}/commits/${sha}`,
+    86400
+  )
+}
+
 async function handleSlack(env) {
   if (!env.SLACK_TOKEN) {
     return new Response('Missing SLACK_TOKEN', { status: 500 })
@@ -54,6 +112,14 @@ export default {
 
     if (url.pathname === '/api/slack') {
       return handleSlack(env)
+    }
+
+    if (url.pathname === '/api/github/events') {
+      return handleGitHubEvents(env)
+    }
+
+    if (url.pathname === '/api/github/commit') {
+      return handleGitHubCommit(env, request)
     }
 
     return env.ASSETS.fetch(request)
